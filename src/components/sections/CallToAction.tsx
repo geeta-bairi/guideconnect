@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const CallToAction = () => {
   return (
@@ -13,12 +14,16 @@ const CallToAction = () => {
             Join GuideConnect today and discover the authentic travel experiences with certified local guides.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button className="bg-travel-green hover:bg-travel-green/90 text-white px-8 py-6 text-lg h-auto">
-              Find a Guide
-            </Button>
-            <Button variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-6 text-lg h-auto">
-              Become a Guide
-            </Button>
+            <Link to="/find-guide">
+              <Button className="bg-travel-green hover:bg-travel-green/90 text-white px-8 py-6 text-lg h-auto">
+                Find a Guide
+              </Button>
+            </Link>
+            <Link to="/become-guide">
+              <Button variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-6 text-lg h-auto">
+                Become a Guide
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

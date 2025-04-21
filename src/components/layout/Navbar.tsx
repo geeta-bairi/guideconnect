@@ -15,25 +15,29 @@ const Navbar = () => {
         </div>
         
         <div className="hidden md:flex gap-6 items-center">
-          <Link to="/#how-it-works" className="text-sm font-medium hover:text-primary">
+          <Link to="/how-it-works" className="text-sm font-medium hover:text-primary">
             How It Works
           </Link>
-          <Link to="/#explore" className="text-sm font-medium hover:text-primary">
+          <Link to="/explore-guides" className="text-sm font-medium hover:text-primary">
             Explore Guides
           </Link>
-          <Link to="/#destinations" className="text-sm font-medium hover:text-primary">
+          <Link to="/destinations" className="text-sm font-medium hover:text-primary">
             Destinations
           </Link>
-          <Link to="/#testimonials" className="text-sm font-medium hover:text-primary">
+          <Link to="/testimonials" className="text-sm font-medium hover:text-primary">
             Testimonials
           </Link>
         </div>
         
         <div className="flex items-center gap-4">
-          <Button variant="ghost" className="hidden md:inline-flex">
-            Sign In
-          </Button>
-          <Button>Get Started</Button>
+          <Link to="/login">
+            <Button variant="ghost" className="hidden md:inline-flex">
+              Sign In
+            </Button>
+          </Link>
+          <Link to="/register">
+            <Button>Get Started</Button>
+          </Link>
         </div>
       </div>
     </nav>
