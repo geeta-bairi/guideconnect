@@ -1,4 +1,6 @@
 
+import GuideFeatures from "@/components/features/GuideFeatures";
+
 const BecomeGuide = () => (
   <div className="container py-12">
     <h1 className="text-3xl font-bold mb-4 text-travel-blue">Become a Guide</h1>
@@ -16,6 +18,9 @@ const BecomeGuide = () => (
         Start the Application (Demo only)
       </button>
     </div>
+    {/* Guide-specific features below */}
+    <h2 className="text-2xl font-semibold mt-14 mb-2 text-travel-blue">Why Guide with Us?</h2>
+    <GuideFeatures />
   </div>
 );
 export default BecomeGuide;
