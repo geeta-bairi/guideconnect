@@ -7,6 +7,7 @@ import PopularGuides from "@/components/sections/PopularGuides";
 import PopularExperiences from "@/components/sections/PopularExperiences";
 import Testimonials from "@/components/sections/Testimonials";
 import CallToAction from "@/components/sections/CallToAction";
+import Newsletter from "@/components/sections/Newsletter";
 
 const Index = () => {
   return (
@@ -18,6 +19,7 @@ const Index = () => {
         <PopularGuides />
         <PopularExperiences />
         <Testimonials />
+        <Newsletter />
         <CallToAction />
       </main>
       <Footer />
