@@ -11,11 +11,11 @@ export const registerSchema = z.object({
     .regex(/[0-9]/, "Password must contain at least one number"),
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   userType: z.enum(["traveler", "guide"]),
-  acceptTerms: z.literal(true, {
-    errorMap: () => ({ message: "You must accept the Terms of Service" }),
+  acceptTerms: z.boolean().refine(val => val === true, {
+    message: "You must accept the Terms of Service",
   }),
-  acceptPrivacy: z.literal(true, {
-    errorMap: () => ({ message: "You must accept the Privacy Policy" }),
+  acceptPrivacy: z.boolean().refine(val => val === true, {
+    message: "You must accept the Privacy Policy",
   }),
 });
 

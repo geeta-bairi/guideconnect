@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -182,6 +183,7 @@ const Register = () => {
                     <FormLabel>
                       I accept the <Link to="/terms" className="text-travel-blue hover:underline" target="_blank">Terms of Service</Link>
                     </FormLabel>
+                    <FormMessage />
                   </div>
                 </FormItem>
               )}
@@ -202,6 +204,7 @@ const Register = () => {
                     <FormLabel>
                       I accept the <Link to="/privacy" className="text-travel-blue hover:underline" target="_blank">Privacy Policy</Link>
                     </FormLabel>
+                    <FormMessage />
                   </div>
                 </FormItem>
               )}

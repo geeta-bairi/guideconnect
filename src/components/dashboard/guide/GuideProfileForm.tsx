@@ -1,8 +1,10 @@
+
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { GuideProfile, GuideProfileFormData } from "@/types/guide";
+import { useState } from "react";
 
 interface GuideProfileFormProps {
   profileData: GuideProfile | null;
@@ -12,6 +14,8 @@ interface GuideProfileFormProps {
 
 export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: GuideProfileFormProps) => {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const calculateProfileCompletion = () => {
     if (!profileData) return 25;
@@ -20,42 +24,71 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
     return Math.round((filledFields.length / fields.length) * 100);
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
   const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    if (!userId) return;
-    
-    const formData = new FormData(e.currentTarget);
-    const hourlyRateValue = formData.get('hourly_rate');
-    
-    const updatedProfile = {
-      full_name: formData.get('full_name') as string,
-      location: formData.get('location') as string,
-      bio: formData.get('bio') as string,
-      phone: formData.get('phone') as string,
-      specialization: formData.get('specialization') as string,
-      languages: formData.get('languages') as string,
-      hourly_rate: hourlyRateValue ? parseFloat(hourlyRateValue as string) : null,
-    };
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "User ID not found",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
     
     try {
-      const { error } = await supabase
+      const formData = new FormData(e.currentTarget);
+      const hourlyRateValue = formData.get('hourly_rate');
+      
+      const updatedProfile = {
+        full_name: formData.get('full_name') as string,
+        location: formData.get('location') as string,
+        bio: formData.get('bio') as string,
+        phone: formData.get('phone') as string,
+        specialization: formData.get('specialization') as string,
+        languages: formData.get('languages') as string,
+        hourly_rate: hourlyRateValue ? parseFloat(hourlyRateValue as string) : null,
+      };
+      
+      console.log("Updating profile with data:", updatedProfile);
+      
+      const { data, error } = await supabase
         .from('profiles')
         .update(updatedProfile)
-        .eq('id', userId);
+        .eq('id', userId)
+        .select();
       
       if (error) throw error;
+      
+      // Handle file upload if there is a selected file
+      if (selectedFile) {
+        // Upload logic would go here once we create a storage bucket
+        console.log("Would upload file:", selectedFile.name);
+      }
       
       toast({
         title: "Success",
         description: "Profile updated successfully",
       });
       
-      onProfileUpdate({
-        ...profileData as GuideProfile,
-        ...updatedProfile,
-        id: userId,
-      });
+      if (data && data.length > 0) {
+        onProfileUpdate(data[0] as GuideProfile);
+      } else {
+        // Make sure we update the local state even if no data is returned
+        onProfileUpdate({
+          ...profileData as GuideProfile,
+          ...updatedProfile,
+          id: userId,
+        });
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
@@ -63,16 +96,35 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
         description: "Failed to update profile",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <form onSubmit={handleProfileUpdate} className="flex flex-col md:flex-row gap-4">
       <div className="md:w-1/3">
-        <div className="bg-gray-200 w-32 h-32 rounded-full mx-auto mb-4"></div>
-        <Button type="button" className="w-full bg-travel-blue hover:bg-travel-blue/90 mb-2">
-          Update Photo
-        </Button>
+        <div className="bg-gray-200 w-32 h-32 rounded-full mx-auto mb-4">
+          {/* Profile image preview would go here */}
+        </div>
+        <div className="mb-4">
+          <input 
+            type="file" 
+            id="profilePhoto" 
+            name="profilePhoto" 
+            accept="image/*" 
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <label htmlFor="profilePhoto" className="w-full flex justify-center mb-2">
+            <Button type="button" className="w-full bg-travel-blue hover:bg-travel-blue/90">
+              {selectedFile ? "Change Photo" : "Update Photo"}
+            </Button>
+          </label>
+          {selectedFile && (
+            <p className="text-xs text-center text-gray-500">Selected: {selectedFile.name}</p>
+          )}
+        </div>
         <p className="text-sm text-center text-gray-500 mb-4">Profile completion</p>
         <Progress value={calculateProfileCompletion()} className="h-2" />
       </div>
@@ -136,7 +188,13 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
             />
           </div>
         </div>
-        <Button type="submit" className="bg-travel-green hover:bg-travel-green/90">Save Changes</Button>
+        <Button 
+          type="submit" 
+          className="bg-travel-green hover:bg-travel-green/90"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Saving..." : "Save Changes"}
+        </Button>
       </div>
     </form>
   );
