@@ -3,23 +3,47 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { GuideProfile, GuideProfileFormData } from "@/types/guide";
 import { useState } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+export interface GuideProfile {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  location: string | null;
+  phone: string | null;
+  specialization: string | null;
+  bio: string | null;
+  languages: string | null;
+  hourly_rate: number | null;
+  avatar_url: string | null;
+  years_experience: number | null;
+  certifications: any | null;
+  availability: any | null;
+}
 
 interface GuideProfileFormProps {
   profileData: GuideProfile | null;
   userId: string;
+  userEmail?: string | null;
   onProfileUpdate: (data: GuideProfile) => void;
 }
 
-export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: GuideProfileFormProps) => {
+export const GuideProfileForm = ({ 
+  profileData, 
+  userId, 
+  userEmail,
+  onProfileUpdate 
+}: GuideProfileFormProps) => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const calculateProfileCompletion = () => {
     if (!profileData) return 25;
-    const fields = ['full_name', 'location', 'bio', 'phone', 'specialization', 'languages', 'hourly_rate'];
+    const fields = ['full_name', 'location', 'bio', 'phone', 'specialization', 'languages', 'hourly_rate', 'years_experience'];
     const filledFields = fields.filter(field => profileData[field as keyof GuideProfile]);
     return Math.round((filledFields.length / fields.length) * 100);
   };
@@ -47,6 +71,29 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
     try {
       const formData = new FormData(e.currentTarget);
       const hourlyRateValue = formData.get('hourly_rate');
+      const yearsExperienceValue = formData.get('years_experience');
+      const certificationsValue = formData.get('certifications');
+      const availabilityValue = formData.get('availability');
+      
+      let certifications = null;
+      if (certificationsValue) {
+        try {
+          certifications = JSON.parse(certificationsValue as string);
+        } catch (e) {
+          console.warn('Failed to parse certifications JSON, storing as string');
+          certifications = certificationsValue;
+        }
+      }
+      
+      let availability = null;
+      if (availabilityValue) {
+        try {
+          availability = JSON.parse(availabilityValue as string);
+        } catch (e) {
+          console.warn('Failed to parse availability JSON, storing as string');
+          availability = availabilityValue;
+        }
+      }
       
       const updatedProfile = {
         full_name: formData.get('full_name') as string,
@@ -56,12 +103,15 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
         specialization: formData.get('specialization') as string,
         languages: formData.get('languages') as string,
         hourly_rate: hourlyRateValue ? parseFloat(hourlyRateValue as string) : null,
+        years_experience: yearsExperienceValue ? parseInt(yearsExperienceValue as string) : null,
+        certifications,
+        availability,
+        email: userEmail || null,
       };
       
-      console.log("Updating profile with data:", updatedProfile);
-      
+      // Update the guide profile
       const { data, error } = await supabase
-        .from('profiles')
+        .from('guide_profiles')
         .update(updatedProfile)
         .eq('id', userId)
         .select();
@@ -70,8 +120,28 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
       
       // Handle file upload if there is a selected file
       if (selectedFile) {
-        // Upload logic would go here once we create a storage bucket
-        console.log("Would upload file:", selectedFile.name);
+        const filePath = `${userId}/profile`;
+        const { error: uploadError } = await supabase.storage
+          .from('profile_images')
+          .upload(filePath, selectedFile, { upsert: true });
+        
+        if (uploadError) throw uploadError;
+        
+        // Get the public URL
+        const { data: urlData } = supabase.storage
+          .from('profile_images')
+          .getPublicUrl(filePath);
+        
+        // Update profile with avatar URL
+        await supabase
+          .from('guide_profiles')
+          .update({ avatar_url: urlData.publicUrl })
+          .eq('id', userId);
+        
+        // Update local state with new avatar URL
+        if (data && data.length > 0) {
+          data[0].avatar_url = urlData.publicUrl;
+        }
       }
       
       toast({
@@ -104,34 +174,40 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
   return (
     <form onSubmit={handleProfileUpdate} className="flex flex-col md:flex-row gap-4">
       <div className="md:w-1/3">
-        <div className="bg-gray-200 w-32 h-32 rounded-full mx-auto mb-4">
-          {/* Profile image preview would go here */}
+        <div className="relative w-32 h-32 rounded-full mx-auto mb-4 bg-gray-200 overflow-hidden">
+          <Avatar className="w-32 h-32">
+            {profileData?.avatar_url ? (
+              <AvatarImage src={profileData.avatar_url} alt="Profile picture" />
+            ) : (
+              <AvatarFallback>{profileData?.full_name?.charAt(0) || profileData?.email?.charAt(0) || 'G'}</AvatarFallback>
+            )}
+          </Avatar>
         </div>
         <div className="mb-4">
           <input 
             type="file" 
             id="profilePhoto" 
             name="profilePhoto" 
-            accept="image/*" 
+            accept="image/*"
             className="hidden"
             onChange={handleFileChange}
           />
           <label htmlFor="profilePhoto" className="w-full flex justify-center mb-2">
             <Button type="button" className="w-full bg-travel-blue hover:bg-travel-blue/90">
-              {selectedFile ? "Change Photo" : "Update Photo"}
+              {selectedFile ? t('changePhoto') : t('updatePhoto')}
             </Button>
           </label>
           {selectedFile && (
             <p className="text-xs text-center text-gray-500">Selected: {selectedFile.name}</p>
           )}
         </div>
-        <p className="text-sm text-center text-gray-500 mb-4">Profile completion</p>
+        <p className="text-sm text-center text-gray-500 mb-4">{t('profileCompletion')}</p>
         <Progress value={calculateProfileCompletion()} className="h-2" />
       </div>
       <div className="md:w-2/3 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm text-gray-500">Full Name</label>
+            <label className="text-sm text-gray-500">{t('fullName')}</label>
             <input 
               name="full_name" 
               className="w-full p-2 border rounded" 
@@ -139,7 +215,7 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
             />
           </div>
           <div>
-            <label className="text-sm text-gray-500">Location</label>
+            <label className="text-sm text-gray-500">{t('location')}</label>
             <input 
               name="location" 
               className="w-full p-2 border rounded" 
@@ -147,15 +223,15 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
             />
           </div>
           <div>
-            <label className="text-sm text-gray-500">Phone</label>
+            <label className="text-sm text-gray-500">{t('phone')}</label>
             <input 
               name="phone" 
               className="w-full p-2 border rounded" 
               defaultValue={profileData?.phone || ""} 
             />
           </div>
-          <div className="md:col-span-2">
-            <label className="text-sm text-gray-500">Specialization</label>
+          <div>
+            <label className="text-sm text-gray-500">{t('specialization')}</label>
             <input 
               name="specialization" 
               className="w-full p-2 border rounded" 
@@ -163,7 +239,7 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
             />
           </div>
           <div className="md:col-span-2">
-            <label className="text-sm text-gray-500">Bio</label>
+            <label className="text-sm text-gray-500">{t('bio')}</label>
             <textarea
               name="bio"
               className="w-full p-2 border rounded h-24"
@@ -171,7 +247,7 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
             />
           </div>
           <div>
-            <label className="text-sm text-gray-500">Languages</label>
+            <label className="text-sm text-gray-500">{t('languages')}</label>
             <input 
               name="languages" 
               className="w-full p-2 border rounded" 
@@ -179,12 +255,39 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
             />
           </div>
           <div>
-            <label className="text-sm text-gray-500">Hourly Rate ($)</label>
+            <label className="text-sm text-gray-500">{t('hourlyRate')}</label>
             <input 
               name="hourly_rate" 
               className="w-full p-2 border rounded" 
               type="number" 
               defaultValue={profileData?.hourly_rate || "50"} 
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-500">{t('yearsExperience')}</label>
+            <input 
+              name="years_experience" 
+              className="w-full p-2 border rounded" 
+              type="number" 
+              defaultValue={profileData?.years_experience || "1"} 
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-500">{t('certifications')}</label>
+            <input 
+              name="certifications" 
+              className="w-full p-2 border rounded" 
+              defaultValue={profileData?.certifications ? JSON.stringify(profileData.certifications) : ""} 
+              placeholder='[{"name": "Tour Guide License", "year": 2020}]'
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="text-sm text-gray-500">{t('availability')}</label>
+            <input 
+              name="availability" 
+              className="w-full p-2 border rounded" 
+              defaultValue={profileData?.availability ? JSON.stringify(profileData.availability) : ""} 
+              placeholder='{"monday": ["9:00-17:00"], "tuesday": ["10:00-18:00"]}'
             />
           </div>
         </div>
@@ -193,7 +296,7 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
           className="bg-travel-green hover:bg-travel-green/90"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Saving..." : "Save Changes"}
+          {isSubmitting ? t('loading') : t('save')}
         </Button>
       </div>
     </form>

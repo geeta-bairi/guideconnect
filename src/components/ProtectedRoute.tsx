@@ -1,3 +1,4 @@
+
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { useState, useEffect } from "react";
@@ -20,6 +21,33 @@ export function ProtectedRoute({
       if (user && userType) {
         setIsCheckingProfile(true);
         try {
+          // Try to get from guide_profiles first
+          let { data: guideData } = await supabase
+            .from('guide_profiles')
+            .select('id')
+            .eq('id', user.id)
+            .maybeSingle();
+          
+          if (guideData) {
+            setProfileType('guide');
+            setIsCheckingProfile(false);
+            return;
+          }
+          
+          // Try traveler_profiles next
+          let { data: travelerData } = await supabase
+            .from('traveler_profiles')
+            .select('id')
+            .eq('id', user.id)
+            .maybeSingle();
+          
+          if (travelerData) {
+            setProfileType('traveler');
+            setIsCheckingProfile(false);
+            return;
+          }
+          
+          // If we don't find in either, check the old profiles table
           const { data, error } = await supabase
             .from('profiles')
             .select('user_type')
