@@ -21,14 +21,15 @@ export function ProtectedRoute({
       if (user && userType) {
         setIsCheckingProfile(true);
         try {
+          // Cast the response type to handle the TypeScript error
           const { data, error } = await supabase
             .from('profiles')
             .select('user_type')
             .eq('id', user.id)
-            .single();
+            .single() as any;
           
           if (error) throw error;
-          setProfileType(data.user_type);
+          setProfileType(data?.user_type || null);
         } catch (error) {
           console.error('Error fetching user type:', error);
         } finally {

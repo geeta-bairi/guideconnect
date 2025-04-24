@@ -1,9 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { GuideProfile } from "@/types/guide";
+import { GuideProfile, GuideProfileFormData } from "@/types/guide";
 
 interface GuideProfileFormProps {
   profileData: GuideProfile | null;
@@ -27,7 +26,7 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
     if (!userId) return;
     
     const formData = new FormData(e.currentTarget);
-    const updatedProfile = {
+    const formValues: GuideProfileFormData = {
       full_name: formData.get('full_name'),
       location: formData.get('location'),
       bio: formData.get('bio'),
@@ -37,11 +36,21 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
       hourly_rate: formData.get('hourly_rate'),
     };
     
+    const updatedProfile = {
+      full_name: formValues.full_name as string,
+      location: formValues.location as string,
+      bio: formValues.bio as string,
+      phone: formValues.phone as string,
+      specialization: formValues.specialization as string,
+      languages: formValues.languages as string,
+      hourly_rate: formValues.hourly_rate ? Number(formValues.hourly_rate) : null,
+    };
+    
     try {
       const { error } = await supabase
         .from('profiles')
         .update(updatedProfile)
-        .eq('id', userId);
+        .eq('id', userId) as any;
       
       if (error) throw error;
       
@@ -50,7 +59,12 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
         description: "Profile updated successfully",
       });
       
-      onProfileUpdate({ ...profileData, ...updatedProfile } as GuideProfile);
+      onProfileUpdate({
+        ...profileData as GuideProfile,
+        ...updatedProfile,
+        id: userId,
+        user_type: profileData?.user_type || null
+      });
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({

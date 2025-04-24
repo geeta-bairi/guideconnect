@@ -10,3 +10,14 @@ export interface GuideProfile {
   hourly_rate: number | null;
   user_type: string | null;
 }
+
+// Type for use with form submissions
+export interface GuideProfileFormData {
+  full_name: FormDataEntryValue | null;
+  location: FormDataEntryValue | null;
+  bio: FormDataEntryValue | null;
+  phone: FormDataEntryValue | null;
+  specialization: FormDataEntryValue | null;
+  languages: FormDataEntryValue | null;
+  hourly_rate: FormDataEntryValue | null;
+}

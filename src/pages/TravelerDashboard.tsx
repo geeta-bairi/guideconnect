@@ -1,18 +1,25 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Calendar, MessageSquare, Search, Book, User } from "lucide-react";
+import { Calendar, MessageSquare, Search, Book, User } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 
+interface TravelerProfile {
+  id: string;
+  full_name: string | null;
+  location: string | null;
+  phone: string | null;
+  user_type: string | null;
+}
+
 const TravelerDashboard = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const { user, loading } = useAuth();
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<TravelerProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -27,7 +34,7 @@ const TravelerDashboard = () => {
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .single() as any;
         
         if (error) throw error;
         setProfileData(data);
@@ -67,16 +74,16 @@ const TravelerDashboard = () => {
     
     const formData = new FormData(e.currentTarget);
     const updatedProfile = {
-      full_name: formData.get('full_name'),
-      location: formData.get('location'),
-      phone: formData.get('phone'),
+      full_name: formData.get('full_name') as string,
+      location: formData.get('location') as string,
+      phone: formData.get('phone') as string,
     };
     
     try {
       const { error } = await supabase
         .from('profiles')
         .update(updatedProfile)
-        .eq('id', user.id);
+        .eq('id', user.id) as any;
       
       if (error) throw error;
       
@@ -85,8 +92,7 @@ const TravelerDashboard = () => {
         description: "Profile updated successfully",
       });
       
-      // Update local state
-      setProfileData(prev => ({ ...prev, ...updatedProfile }));
+      setProfileData(prev => ({ ...prev, ...updatedProfile } as TravelerProfile));
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({

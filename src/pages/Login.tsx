@@ -46,18 +46,19 @@ const Login = () => {
       }
       
       // Check user_type to redirect to the appropriate dashboard
+      // Cast the response to any to bypass TypeScript error
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('user_type')
         .eq('id', data.user?.id)
-        .single();
+        .single() as any;
         
       if (profileError) {
         throw profileError;
       }
       
       // Redirect based on user type
-      if (profileData.user_type === 'guide') {
+      if (profileData && profileData.user_type === 'guide') {
         navigate('/guide-dashboard');
       } else {
         navigate('/traveler-dashboard');
