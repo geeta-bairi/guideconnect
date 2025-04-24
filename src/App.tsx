@@ -1,8 +1,10 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -24,6 +26,10 @@ import PageTestimonials from "./pages/PageTestimonials";
 import FindGuide from "./pages/FindGuide";
 import BecomeGuide from "./pages/BecomeGuide";
 
+// New dashboard imports
+import TravelerDashboard from "./pages/TravelerDashboard";
+import GuideDashboard from "./pages/GuideDashboard";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -36,6 +42,10 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          
+          {/* Dashboard routes */}
+          <Route path="/traveler-dashboard" element={<TravelerDashboard />} />
+          <Route path="/guide-dashboard" element={<GuideDashboard />} />
 
           {/* Footer/Company navigation */}
           <Route path="/about" element={<About />} />
