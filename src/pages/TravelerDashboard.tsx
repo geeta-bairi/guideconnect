@@ -20,6 +20,7 @@ interface TravelerProfile {
   languages: string | null;
   avatar_url: string | null;
   email: string | null;
+  user_type: string | null;
 }
 
 const TravelerDashboard = () => {
@@ -39,7 +40,7 @@ const TravelerDashboard = () => {
       
       try {
         const { data, error } = await supabase
-          .from('traveler_profiles')
+          .from('profiles')
           .select('*')
           .eq('id', user.id)
           .maybeSingle();
@@ -82,17 +83,36 @@ const TravelerDashboard = () => {
     setIsSaving(true);
     
     const formData = new FormData(e.currentTarget);
+    
+    let preferences = null;
+    const preferencesValue = formData.get('preferences') as string;
+    if (preferencesValue && preferencesValue.trim() !== '') {
+      try {
+        preferences = JSON.parse(preferencesValue);
+      } catch (error) {
+        console.error('Failed to parse preferences JSON:', error);
+        toast({
+          title: "Error",
+          description: "Failed to parse preferences. Please use valid JSON format.",
+          variant: "destructive"
+        });
+        setIsSaving(false);
+        return;
+      }
+    }
+    
     const updatedProfile = {
       full_name: formData.get('full_name') as string,
       location: formData.get('location') as string,
       phone: formData.get('phone') as string,
       languages: formData.get('languages') as string,
-      preferences: formData.get('preferences') ? JSON.parse(formData.get('preferences') as string) : null,
+      preferences: preferences,
+      user_type: 'traveler'
     };
     
     try {
       const { error } = await supabase
-        .from('traveler_profiles')
+        .from('profiles')
         .update(updatedProfile)
         .eq('id', user.id);
       
@@ -113,7 +133,7 @@ const TravelerDashboard = () => {
           .getPublicUrl(filePath);
         
         await supabase
-          .from('traveler_profiles')
+          .from('profiles')
           .update({ avatar_url: data.publicUrl })
           .eq('id', user.id);
         

@@ -21,6 +21,7 @@ export interface GuideProfile {
   years_experience: number | null;
   certifications: any | null;
   availability: any | null;
+  user_type: string | null;
 }
 
 interface GuideProfileFormProps {
@@ -107,11 +108,12 @@ export const GuideProfileForm = ({
         certifications,
         availability,
         email: userEmail || null,
+        user_type: 'guide'
       };
       
-      // Update the guide profile
+      // Update the profile
       const { data, error } = await supabase
-        .from('guide_profiles')
+        .from('profiles')
         .update(updatedProfile)
         .eq('id', userId)
         .select();
@@ -134,7 +136,7 @@ export const GuideProfileForm = ({
         
         // Update profile with avatar URL
         await supabase
-          .from('guide_profiles')
+          .from('profiles')
           .update({ avatar_url: urlData.publicUrl })
           .eq('id', userId);
         
@@ -150,13 +152,21 @@ export const GuideProfileForm = ({
       });
       
       if (data && data.length > 0) {
-        onProfileUpdate(data[0] as GuideProfile);
+        onProfileUpdate({
+          ...data[0],
+          avatar_url: data[0].avatar_url || profileData?.avatar_url,
+          years_experience: data[0].years_experience || profileData?.years_experience,
+          certifications: data[0].certifications || profileData?.certifications,
+          availability: data[0].availability || profileData?.availability,
+          email: userEmail || profileData?.email
+        });
       } else {
         // Make sure we update the local state even if no data is returned
         onProfileUpdate({
           ...profileData as GuideProfile,
           ...updatedProfile,
           id: userId,
+          avatar_url: profileData?.avatar_url
         });
       }
     } catch (error) {
@@ -194,14 +204,14 @@ export const GuideProfileForm = ({
           />
           <label htmlFor="profilePhoto" className="w-full flex justify-center mb-2">
             <Button type="button" className="w-full bg-travel-blue hover:bg-travel-blue/90">
-              {selectedFile ? t('changePhoto') : t('updatePhoto')}
+              {selectedFile ? t('updatePhoto') : t('updatePhoto')}
             </Button>
           </label>
           {selectedFile && (
             <p className="text-xs text-center text-gray-500">Selected: {selectedFile.name}</p>
           )}
         </div>
-        <p className="text-sm text-center text-gray-500 mb-4">{t('profileCompletion')}</p>
+        <p className="text-sm text-center text-gray-500 mb-4">{t('profile')}</p>
         <Progress value={calculateProfileCompletion()} className="h-2" />
       </div>
       <div className="md:w-2/3 space-y-4">

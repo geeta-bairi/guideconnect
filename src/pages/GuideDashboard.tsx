@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,16 +12,18 @@ import { GuideProfileForm } from "@/components/dashboard/guide/GuideProfileForm"
 import { GuideMessages } from "@/components/dashboard/guide/GuideMessages";
 import { GuideAvailability } from "@/components/dashboard/guide/GuideAvailability";
 import { GuideBookings } from "@/components/dashboard/guide/GuideBookings";
-import { GuideProfile } from "@/types/guide";
 import { GuideStats } from "@/components/dashboard/guide/GuideStats";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 
 const GuideDashboard = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const { user, loading } = useAuth();
-  const [profileData, setProfileData] = useState<GuideProfile | null>(null);
+  const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -64,10 +67,14 @@ const GuideDashboard = () => {
     }
   };
 
+  const handleProfileUpdate = (newProfileData) => {
+    setProfileData(newProfileData);
+  };
+
   if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">Loading...</div>
+        <div className="text-center">{t('loading')}</div>
       </div>
     );
   }
@@ -76,13 +83,16 @@ const GuideDashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-travel-blue text-white p-4">
         <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold">GuideConnect</h1>
-          <Button variant="ghost" className="text-white hover:bg-travel-blue/80" onClick={handleLogout}>Logout</Button>
+          <h1 className="text-xl font-bold">{t('appName')}</h1>
+          <div className="flex items-center space-x-4">
+            <LanguageSwitcher />
+            <Button variant="ghost" className="text-white hover:bg-travel-blue/80" onClick={handleLogout}>{t('logout')}</Button>
+          </div>
         </div>
       </div>
       
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6 text-travel-blue">Guide Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-6 text-travel-blue">{t('dashboard')}</h1>
         
         <GuideStats />
         
@@ -90,19 +100,19 @@ const GuideDashboard = () => {
           <TabsList className="grid grid-cols-4 md:w-[500px]">
             <TabsTrigger value="profile">
               <User className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Profile</span>
+              <span className="hidden sm:inline">{t('profile')}</span>
             </TabsTrigger>
             <TabsTrigger value="availability">
               <Calendar className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Availability</span>
+              <span className="hidden sm:inline">{t('availability')}</span>
             </TabsTrigger>
             <TabsTrigger value="bookings">
               <Calendar className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Bookings</span>
+              <span className="hidden sm:inline">{t('bookings')}</span>
             </TabsTrigger>
             <TabsTrigger value="messages">
               <MessageSquare className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Messages</span>
+              <span className="hidden sm:inline">{t('messages')}</span>
             </TabsTrigger>
           </TabsList>
           
@@ -113,7 +123,8 @@ const GuideDashboard = () => {
                   <GuideProfileForm 
                     profileData={profileData} 
                     userId={user.id} 
-                    onProfileUpdate={setProfileData}
+                    onProfileUpdate={handleProfileUpdate}
+                    userEmail={user.email}
                   />
                 )}
               </CardContent>
