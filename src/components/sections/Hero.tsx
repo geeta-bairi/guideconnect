@@ -1,8 +1,30 @@
 
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, User } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import React, { useState } from "react";
+import { cn } from "@/lib/utils";
+
+const destinations = [
+  "Rome", 
+  "Paris", 
+  "Tokyo", 
+  "New York", 
+  "Sydney", 
+  "Cairo", 
+  "Rio de Janeiro", 
+  "London", 
+  "Barcelona", 
+  "Dubai"
+];
 
 const Hero = () => {
+  const [destination, setDestination] = useState("");
+  const [travelDate, setTravelDate] = useState<Date>();
+
   return (
     <div className="relative">
       {/* Hero Background */}
@@ -31,20 +53,44 @@ const Hero = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center bg-gray-50 rounded px-3 py-2">
                 <MapPin className="h-5 w-5 text-travel-blue mr-2" />
-                <input
-                  type="text"
-                  placeholder="Destination"
-                  className="bg-transparent w-full focus:outline-none"
-                />
+                <Select onValueChange={setDestination} value={destination}>
+                  <SelectTrigger className="w-full bg-transparent border-none focus:outline-none">
+                    <SelectValue placeholder="Destination" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {destinations.map((dest) => (
+                      <SelectItem key={dest} value={dest}>{dest}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+              
               <div className="flex items-center bg-gray-50 rounded px-3 py-2">
                 <Calendar className="h-5 w-5 text-travel-blue mr-2" />
-                <input
-                  type="text"
-                  placeholder="Travel Dates"
-                  className="bg-transparent w-full focus:outline-none"
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal bg-transparent border-none",
+                        !travelDate && "text-muted-foreground"
+                      )}
+                    >
+                      {travelDate ? format(travelDate, "PPP") : <span>Travel Dates</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={travelDate}
+                      onSelect={setTravelDate}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
+              
               <div className="flex items-center bg-gray-50 rounded px-3 py-2">
                 <User className="h-5 w-5 text-travel-blue mr-2" />
                 <select className="bg-transparent w-full focus:outline-none">
