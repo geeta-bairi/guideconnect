@@ -26,31 +26,23 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
     if (!userId) return;
     
     const formData = new FormData(e.currentTarget);
-    const formValues: GuideProfileFormData = {
-      full_name: formData.get('full_name'),
-      location: formData.get('location'),
-      bio: formData.get('bio'),
-      phone: formData.get('phone'),
-      specialization: formData.get('specialization'),
-      languages: formData.get('languages'),
-      hourly_rate: formData.get('hourly_rate'),
-    };
+    const hourlyRateValue = formData.get('hourly_rate');
     
     const updatedProfile = {
-      full_name: formValues.full_name as string,
-      location: formValues.location as string,
-      bio: formValues.bio as string,
-      phone: formValues.phone as string,
-      specialization: formValues.specialization as string,
-      languages: formValues.languages as string,
-      hourly_rate: formValues.hourly_rate ? Number(formValues.hourly_rate) : null,
+      full_name: formData.get('full_name') as string,
+      location: formData.get('location') as string,
+      bio: formData.get('bio') as string,
+      phone: formData.get('phone') as string,
+      specialization: formData.get('specialization') as string,
+      languages: formData.get('languages') as string,
+      hourly_rate: hourlyRateValue ? parseFloat(hourlyRateValue as string) : null,
     };
     
     try {
       const { error } = await supabase
         .from('profiles')
         .update(updatedProfile)
-        .eq('id', userId) as any;
+        .eq('id', userId);
       
       if (error) throw error;
       
@@ -63,9 +55,8 @@ export const GuideProfileForm = ({ profileData, userId, onProfileUpdate }: Guide
         ...profileData as GuideProfile,
         ...updatedProfile,
         id: userId,
-        user_type: profileData?.user_type || null
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating profile:', error);
       toast({
         title: "Error",

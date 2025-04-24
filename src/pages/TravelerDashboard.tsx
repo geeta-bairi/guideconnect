@@ -24,7 +24,6 @@ const TravelerDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Fetch profile data
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!user) return;
@@ -34,7 +33,7 @@ const TravelerDashboard = () => {
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single() as any;
+          .maybeSingle();
         
         if (error) throw error;
         setProfileData(data);
@@ -83,7 +82,7 @@ const TravelerDashboard = () => {
       const { error } = await supabase
         .from('profiles')
         .update(updatedProfile)
-        .eq('id', user.id) as any;
+        .eq('id', user.id);
       
       if (error) throw error;
       
@@ -92,7 +91,7 @@ const TravelerDashboard = () => {
         description: "Profile updated successfully",
       });
       
-      setProfileData(prev => ({ ...prev, ...updatedProfile } as TravelerProfile));
+      setProfileData(prev => ({ ...prev, ...updatedProfile }));
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({

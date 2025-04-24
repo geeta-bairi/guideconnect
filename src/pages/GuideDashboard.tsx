@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,18 +22,16 @@ const GuideDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Fetch profile data
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!user) return;
       
       try {
-        // Cast the response to any to bypass TypeScript error
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single() as any;
+          .maybeSingle();
         
         if (error) throw error;
         setProfileData(data);

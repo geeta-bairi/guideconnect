@@ -1,4 +1,3 @@
-
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { useState, useEffect } from "react";
@@ -21,12 +20,11 @@ export function ProtectedRoute({
       if (user && userType) {
         setIsCheckingProfile(true);
         try {
-          // Cast the response type to handle the TypeScript error
           const { data, error } = await supabase
             .from('profiles')
             .select('user_type')
             .eq('id', user.id)
-            .single() as any;
+            .maybeSingle();
           
           if (error) throw error;
           setProfileType(data?.user_type || null);
@@ -53,7 +51,6 @@ export function ProtectedRoute({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If userType is specified and doesn't match the profile type, redirect to appropriate dashboard
   if (userType && profileType && userType !== profileType) {
     const redirectPath = profileType === 'guide' ? '/guide-dashboard' : '/traveler-dashboard';
     return <Navigate to={redirectPath} replace />;
