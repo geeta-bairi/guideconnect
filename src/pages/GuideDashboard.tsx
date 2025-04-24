@@ -1,20 +1,130 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, Calendar, MessageSquare, DollarSign, User } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 
 const GuideDashboard = () => {
   const [activeTab, setActiveTab] = useState("profile");
+  const { user, loading } = useAuth();
+  const [profileData, setProfileData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // Fetch profile data
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) throw error;
+        setProfileData(data);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load profile data",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchProfileData();
+  }, [user, toast]);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    if (!user) return;
+    
+    const formData = new FormData(e.currentTarget);
+    const updatedProfile = {
+      full_name: formData.get('full_name'),
+      location: formData.get('location'),
+      bio: formData.get('bio'),
+      phone: formData.get('phone'),
+      specialization: formData.get('specialization'),
+      languages: formData.get('languages'),
+      hourly_rate: formData.get('hourly_rate'),
+    };
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(updatedProfile)
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+      
+      // Update local state
+      setProfileData(prev => ({ ...prev, ...updatedProfile }));
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (loading || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">Loading...</div>
+      </div>
+    );
+  }
+
+  // Calculate profile completion percentage
+  const calculateProfileCompletion = () => {
+    if (!profileData) return 25;
+    
+    const fields = ['full_name', 'location', 'bio', 'phone', 'specialization', 'languages', 'hourly_rate'];
+    const filledFields = fields.filter(field => profileData[field]);
+    return Math.round((filledFields.length / fields.length) * 100);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-travel-blue text-white p-4">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold">GuideConnect</h1>
-          <Button variant="ghost" className="text-white hover:bg-travel-blue/80">Logout</Button>
+          <Button variant="ghost" className="text-white hover:bg-travel-blue/80" onClick={handleLogout}>Logout</Button>
         </div>
       </div>
       
@@ -83,56 +193,86 @@ const GuideDashboard = () => {
                 <CardTitle>Guide Profile</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col md:flex-row gap-4">
+                <form onSubmit={handleProfileUpdate} className="flex flex-col md:flex-row gap-4">
                   <div className="md:w-1/3">
                     <div className="bg-gray-200 w-32 h-32 rounded-full mx-auto mb-4"></div>
-                    <Button className="w-full bg-travel-blue hover:bg-travel-blue/90 mb-2">
+                    <Button type="button" className="w-full bg-travel-blue hover:bg-travel-blue/90 mb-2">
                       Update Photo
                     </Button>
                     <p className="text-sm text-center text-gray-500 mb-4">Profile completion</p>
-                    <Progress value={25} className="h-2" />
+                    <Progress value={calculateProfileCompletion()} className="h-2" />
                   </div>
                   <div className="md:w-2/3 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm text-gray-500">Full Name</label>
-                        <input className="w-full p-2 border rounded" defaultValue="Maria Guide" />
+                        <input 
+                          name="full_name" 
+                          className="w-full p-2 border rounded" 
+                          defaultValue={profileData?.full_name || ""}
+                        />
                       </div>
                       <div>
                         <label className="text-sm text-gray-500">Email</label>
-                        <input className="w-full p-2 border rounded" defaultValue="maria@example.com" />
+                        <input 
+                          className="w-full p-2 border rounded bg-gray-100" 
+                          readOnly
+                          value={user?.email || ""} 
+                        />
                       </div>
                       <div>
                         <label className="text-sm text-gray-500">Location</label>
-                        <input className="w-full p-2 border rounded" defaultValue="Paris, France" />
+                        <input 
+                          name="location" 
+                          className="w-full p-2 border rounded" 
+                          defaultValue={profileData?.location || ""} 
+                        />
                       </div>
                       <div>
                         <label className="text-sm text-gray-500">Phone</label>
-                        <input className="w-full p-2 border rounded" defaultValue="+33 123 456 789" />
+                        <input 
+                          name="phone" 
+                          className="w-full p-2 border rounded" 
+                          defaultValue={profileData?.phone || ""} 
+                        />
                       </div>
                       <div className="md:col-span-2">
                         <label className="text-sm text-gray-500">Specialization</label>
-                        <input className="w-full p-2 border rounded" defaultValue="Historical Walking Tours, Art Museums" />
+                        <input 
+                          name="specialization" 
+                          className="w-full p-2 border rounded" 
+                          defaultValue={profileData?.specialization || ""} 
+                        />
                       </div>
                       <div className="md:col-span-2">
                         <label className="text-sm text-gray-500">Bio</label>
                         <textarea
+                          name="bio"
                           className="w-full p-2 border rounded h-24"
-                          defaultValue="I'm a certified tour guide with 5 years of experience specializing in the artistic and historical heritage of Paris."
+                          defaultValue={profileData?.bio || ""}
                         />
                       </div>
                       <div>
                         <label className="text-sm text-gray-500">Languages</label>
-                        <input className="w-full p-2 border rounded" defaultValue="English, French, Spanish" />
+                        <input 
+                          name="languages" 
+                          className="w-full p-2 border rounded" 
+                          defaultValue={profileData?.languages || ""} 
+                        />
                       </div>
                       <div>
                         <label className="text-sm text-gray-500">Hourly Rate ($)</label>
-                        <input className="w-full p-2 border rounded" type="number" defaultValue="50" />
+                        <input 
+                          name="hourly_rate" 
+                          className="w-full p-2 border rounded" 
+                          type="number" 
+                          defaultValue={profileData?.hourly_rate || "50"} 
+                        />
                       </div>
                     </div>
-                    <Button className="bg-travel-green hover:bg-travel-green/90">Save Changes</Button>
+                    <Button type="submit" className="bg-travel-green hover:bg-travel-green/90">Save Changes</Button>
                   </div>
-                </div>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>
