@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +10,7 @@ import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Eye, EyeOff } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -33,6 +33,8 @@ const Register = () => {
       password: "",
       fullName: "",
       userType: "traveler",
+      acceptTerms: false,
+      acceptPrivacy: false,
     },
   });
 
@@ -161,6 +163,46 @@ const Register = () => {
                     </RadioGroup>
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="acceptTerms"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      I accept the <Link to="/terms" className="text-travel-blue hover:underline" target="_blank">Terms of Service</Link>
+                    </FormLabel>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="acceptPrivacy"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      I accept the <Link to="/privacy" className="text-travel-blue hover:underline" target="_blank">Privacy Policy</Link>
+                    </FormLabel>
+                  </div>
                 </FormItem>
               )}
             />
