@@ -56,6 +56,7 @@ export const TravelerProfileForm = ({
       
       if (error) throw error;
 
+      let avatarUrl = profileData?.avatar_url;
       if (selectedFile) {
         const filePath = `${userId}/profile`;
         const { error: uploadError } = await supabase.storage
@@ -67,15 +68,13 @@ export const TravelerProfileForm = ({
         const { data: urlData } = supabase.storage
           .from('profile_images')
           .getPublicUrl(filePath);
+
+        avatarUrl = urlData.publicUrl;
         
         await supabase
           .from('profiles')
-          .update({ avatar_url: urlData.publicUrl })
+          .update({ avatar_url: avatarUrl })
           .eq('id', userId);
-        
-        if (data && data.length > 0) {
-          data[0].avatar_url = urlData.publicUrl;
-        }
       }
       
       toast({
@@ -86,8 +85,10 @@ export const TravelerProfileForm = ({
       if (data && data.length > 0) {
         onProfileUpdate({
           ...data[0],
-          avatar_url: data[0]?.avatar_url || profileData?.avatar_url,
-          email: userEmail || profileData?.email
+          avatar_url: avatarUrl || profileData?.avatar_url,
+          email: userEmail || profileData?.email,
+          favorite_destinations: profileData?.favorite_destinations,
+          travel_history: profileData?.travel_history
         } as TravelerProfile);
       }
     } catch (error) {

@@ -35,7 +35,20 @@ export const MessagesList = () => {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        setMessages(data || []);
+        
+        // Make sure the data matches our Message interface
+        const typedMessages: Message[] = (data || []).map(msg => ({
+          id: msg.id,
+          content: msg.content,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          created_at: msg.created_at || '',
+          read: msg.read || false,
+          sender: { full_name: msg.sender?.full_name || 'Unknown' },
+          receiver: { full_name: msg.receiver?.full_name || 'Unknown' }
+        }));
+        
+        setMessages(typedMessages);
       } catch (error) {
         console.error('Error fetching messages:', error);
         toast({
@@ -79,7 +92,7 @@ export const MessagesList = () => {
                 {!message.read && (
                   <div className="mt-2">
                     <span className="inline-block px-2 py-1 text-sm bg-blue-100 text-blue-800 rounded">
-                      {t('new')}
+                      New
                     </span>
                   </div>
                 )}

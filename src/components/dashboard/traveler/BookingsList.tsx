@@ -24,7 +24,24 @@ export const BookingsList = () => {
           .order('booking_date', { ascending: true });
 
         if (error) throw error;
-        setBookings(data || []);
+        
+        // Ensure the returned data matches the BookingDetails type
+        const typedBookings: BookingDetails[] = data?.map(booking => ({
+          id: booking.id,
+          traveler_id: booking.traveler_id,
+          guide_id: booking.guide_id,
+          booking_date: booking.booking_date,
+          start_time: booking.start_time,
+          end_time: booking.end_time,
+          status: booking.status as 'pending' | 'confirmed' | 'completed' | 'cancelled',
+          price: booking.price,
+          description: booking.description || '',
+          location: booking.location,
+          created_at: booking.created_at || '',
+          guide: booking.guide
+        })) || [];
+        
+        setBookings(typedBookings);
       } catch (error) {
         console.error('Error fetching bookings:', error);
         toast({

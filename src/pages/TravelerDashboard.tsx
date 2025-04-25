@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,7 +49,8 @@ const TravelerDashboard = () => {
         setProfileData({
           ...profileData,
           ...travelerData,
-          email: user.email
+          email: user.email,
+          avatar_url: profileData.avatar_url || null
         });
       } catch (error) {
         console.error('Error fetching profile:', error);

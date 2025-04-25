@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { GuideProfile } from "@/types/guide"; 
+import { GuideProfile } from "@/types/profile";
 
 export interface GuideProfileProps {
   profileData: GuideProfile | null;
@@ -104,6 +104,7 @@ export const GuideProfileForm = ({
       if (error) throw error;
       
       // Handle file upload if there is a selected file
+      let avatarUrl = profileData?.avatar_url;
       if (selectedFile) {
         const filePath = `${userId}/profile`;
         const { error: uploadError } = await supabase.storage
@@ -117,16 +118,13 @@ export const GuideProfileForm = ({
           .from('profile_images')
           .getPublicUrl(filePath);
         
+        avatarUrl = urlData.publicUrl;
+        
         // Update profile with avatar URL
         await supabase
           .from('profiles')
-          .update({ avatar_url: urlData.publicUrl })
+          .update({ avatar_url: avatarUrl })
           .eq('id', userId);
-        
-        // Update local state with new avatar URL
-        if (data && data.length > 0) {
-          data[0].avatar_url = urlData.publicUrl;
-        }
       }
       
       toast({
@@ -136,21 +134,21 @@ export const GuideProfileForm = ({
       
       if (data && data.length > 0) {
         onProfileUpdate({
-          ...data[0] as GuideProfile,
-          avatar_url: data[0]?.avatar_url || profileData?.avatar_url,
+          ...data[0],
+          avatar_url: avatarUrl,
           years_experience: data[0]?.years_experience || profileData?.years_experience,
-          certifications: data[0]?.certifications || profileData?.certifications,
-          availability: data[0]?.availability || profileData?.availability,
+          certifications: certifications || profileData?.certifications,
+          availability: availability || profileData?.availability,
           email: userEmail || profileData?.email
-        });
+        } as GuideProfile);
       } else {
         // Make sure we update the local state even if no data is returned
         onProfileUpdate({
-          ...profileData as GuideProfile,
+          ...profileData!,
           ...updatedProfile,
           id: userId,
-          avatar_url: profileData?.avatar_url
-        });
+          avatar_url: avatarUrl || profileData?.avatar_url
+        } as GuideProfile);
       }
     } catch (error) {
       console.error('Error updating profile:', error);

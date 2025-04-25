@@ -21,6 +21,7 @@ export interface Profile {
 export interface TravelerProfile extends Profile {
   favorite_destinations?: string[] | null;
   travel_history?: any | null;
+  preferences?: any | null;
 }
 
 export interface GuideProfile extends Profile {
