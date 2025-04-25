@@ -6,14 +6,9 @@ export interface Profile {
   bio: string | null;
   phone: string | null;
   languages: string | null;
-  avatar_url: string | null;
-  email: string | null;
+  hourly_rate: number | null;
+  specialization: string | null;
   user_type: string | null;
-  hourly_rate?: number | null;
-  specialization?: string | null;
-  years_experience?: number | null;
-  certifications?: any | null;
-  availability?: any | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -27,7 +22,7 @@ export interface TravelerProfile extends Profile {
 export interface GuideProfile extends Profile {
   hourly_rate: number | null;
   specialization: string | null;
-  years_experience: number | null;
-  certifications: any | null;
-  availability: any | null;
+  years_experience?: number | null;
+  certifications?: any | null;
+  availability?: any | null;
 }

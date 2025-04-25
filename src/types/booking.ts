@@ -14,7 +14,7 @@ export interface BookingDetails {
   payment_id?: string;
   payment_status?: 'pending' | 'paid' | 'failed';
   guide?: {
-    full_name: string;
-    specialization?: string;
+    full_name: string | null;
+    specialization?: string | null;
   };
 }

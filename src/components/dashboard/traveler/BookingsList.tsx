@@ -15,18 +15,34 @@ export const BookingsList = () => {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const { data, error } = await supabase
+        // Get bookings
+        const { data: bookingsData, error: bookingsError } = await supabase
           .from('bookings')
-          .select(`
-            *,
-            guide:guide_id(full_name, specialization)
-          `)
+          .select('*')
           .order('booking_date', { ascending: true });
 
-        if (error) throw error;
+        if (bookingsError) throw bookingsError;
+
+        // Get guide profiles
+        const guideIds = bookingsData?.map(booking => booking.guide_id) || [];
+        const { data: guidesData, error: guidesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, specialization')
+          .in('id', guideIds);
+          
+        if (guidesError) throw guidesError;
         
-        // Ensure the returned data matches the BookingDetails type
-        const typedBookings: BookingDetails[] = data?.map(booking => ({
+        // Create a map of guide IDs to guide info
+        const guideMap = new Map();
+        guidesData?.forEach(guide => {
+          guideMap.set(guide.id, { 
+            full_name: guide.full_name,
+            specialization: guide.specialization
+          });
+        });
+        
+        // Combine bookings with guide info
+        const typedBookings: BookingDetails[] = (bookingsData || []).map(booking => ({
           id: booking.id,
           traveler_id: booking.traveler_id,
           guide_id: booking.guide_id,
@@ -38,8 +54,8 @@ export const BookingsList = () => {
           description: booking.description || '',
           location: booking.location,
           created_at: booking.created_at || '',
-          guide: booking.guide
-        })) || [];
+          guide: guideMap.get(booking.guide_id) || { full_name: 'Unknown' }
+        }));
         
         setBookings(typedBookings);
       } catch (error) {

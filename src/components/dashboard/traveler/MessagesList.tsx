@@ -12,8 +12,8 @@ interface Message {
   receiver_id: string;
   created_at: string;
   read: boolean;
-  sender: { full_name: string };
-  receiver: { full_name: string };
+  sender_full_name?: string;
+  receiver_full_name?: string;
 }
 
 export const MessagesList = () => {
@@ -25,18 +25,43 @@ export const MessagesList = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
+        const { data: userData } = await supabase.auth.getUser();
+        if (!userData.user) return;
+        
+        const userId = userData.user.id;
+        
+        // Get messages where the user is sender or receiver
         const { data, error } = await supabase
           .from('messages')
           .select(`
-            *,
-            sender:sender_id(full_name),
-            receiver:receiver_id(full_name)
+            *
           `)
+          .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
         
-        // Make sure the data matches our Message interface
+        // Fetch profile names in a separate query for sender and receiver
+        const userIds = new Set<string>();
+        data?.forEach(msg => {
+          userIds.add(msg.sender_id);
+          userIds.add(msg.receiver_id);
+        });
+        
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', Array.from(userIds));
+          
+        if (profileError) throw profileError;
+        
+        // Create a map of user IDs to full names
+        const userMap = new Map<string, string>();
+        profileData?.forEach(profile => {
+          userMap.set(profile.id, profile.full_name || 'Unknown');
+        });
+        
+        // Map the messages with profile names
         const typedMessages: Message[] = (data || []).map(msg => ({
           id: msg.id,
           content: msg.content,
@@ -44,8 +69,8 @@ export const MessagesList = () => {
           receiver_id: msg.receiver_id,
           created_at: msg.created_at || '',
           read: msg.read || false,
-          sender: { full_name: msg.sender?.full_name || 'Unknown' },
-          receiver: { full_name: msg.receiver?.full_name || 'Unknown' }
+          sender_full_name: userMap.get(msg.sender_id) || 'Unknown',
+          receiver_full_name: userMap.get(msg.receiver_id) || 'Unknown'
         }));
         
         setMessages(typedMessages);
@@ -82,7 +107,7 @@ export const MessagesList = () => {
               <div key={message.id} className="border p-4 rounded-lg">
                 <div className="flex justify-between mb-2">
                   <span className="font-medium">
-                    {message.sender?.full_name}
+                    {message.sender_full_name}
                   </span>
                   <span className="text-sm text-gray-500">
                     {new Date(message.created_at).toLocaleString()}
