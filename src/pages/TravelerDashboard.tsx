@@ -7,29 +7,15 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
-
-interface TravelerProfile {
-  id: string;
-  full_name: string | null;
-  location: string | null;
-  phone: string | null;
-  preferences: any | null;
-  languages: string | null;
-  avatar_url: string | null;
-  email: string | null;
-  user_type: string | null;
-}
+import { TravelerProfileForm } from "@/components/dashboard/traveler/TravelerProfileForm";
 
 const TravelerDashboard = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const { user, loading } = useAuth();
-  const [profileData, setProfileData] = useState<TravelerProfile | null>(null);
+  const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -46,11 +32,11 @@ const TravelerDashboard = () => {
           .maybeSingle();
         
         if (error) throw error;
-        setProfileData(data as TravelerProfile);
+        setProfileData(data);
       } catch (error) {
         console.error('Error fetching profile:', error);
         toast({
-          title: t('saveError'),
+          title: "Error",
           description: "Failed to load profile data",
           variant: "destructive"
         });
@@ -69,99 +55,10 @@ const TravelerDashboard = () => {
     } catch (error) {
       console.error('Error signing out:', error);
       toast({
-        title: t('saveError'),
+        title: "Error",
         description: "Failed to sign out",
         variant: "destructive"
       });
-    }
-  };
-
-  const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    
-    if (!user) return;
-    setIsSaving(true);
-    
-    const formData = new FormData(e.currentTarget);
-    
-    let preferences = null;
-    const preferencesValue = formData.get('preferences') as string;
-    if (preferencesValue && preferencesValue.trim() !== '') {
-      try {
-        preferences = JSON.parse(preferencesValue);
-      } catch (error) {
-        console.error('Failed to parse preferences JSON:', error);
-        toast({
-          title: "Error",
-          description: "Failed to parse preferences. Please use valid JSON format.",
-          variant: "destructive"
-        });
-        setIsSaving(false);
-        return;
-      }
-    }
-    
-    const updatedProfile = {
-      full_name: formData.get('full_name') as string,
-      location: formData.get('location') as string,
-      phone: formData.get('phone') as string,
-      languages: formData.get('languages') as string,
-      preferences: preferences,
-      email: user.email,
-      user_type: 'traveler'
-    };
-    
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update(updatedProfile)
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
-      if (selectedFile) {
-        const filePath = `${user.id}/profile`;
-        const { error: uploadError } = await supabase.storage
-          .from('profile_images')
-          .upload(filePath, selectedFile, {
-            upsert: true,
-          });
-        
-        if (uploadError) throw uploadError;
-        
-        const { data } = supabase.storage
-          .from('profile_images')
-          .getPublicUrl(filePath);
-        
-        await supabase
-          .from('profiles')
-          .update({ avatar_url: data.publicUrl })
-          .eq('id', user.id);
-        
-        setProfileData(prev => prev ? { ...prev, avatar_url: data.publicUrl } : null);
-      }
-      
-      toast({
-        title: t('saveSuccess'),
-        description: "Profile updated successfully",
-      });
-      
-      setProfileData(prev => prev ? { ...prev, ...updatedProfile } : null);
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: t('saveError'),
-        description: "Failed to update profile",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
     }
   };
 
@@ -218,96 +115,14 @@ const TravelerDashboard = () => {
                 <CardTitle>{t('myProfile')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleProfileUpdate} className="flex flex-col md:flex-row gap-4">
-                  <div className="md:w-1/3">
-                    <div className="relative w-32 h-32 rounded-full mx-auto mb-4 bg-gray-200 overflow-hidden">
-                      <Avatar className="w-32 h-32">
-                        {profileData?.avatar_url ? (
-                          <AvatarImage src={profileData.avatar_url} alt="Profile picture" />
-                        ) : (
-                          <AvatarFallback>{profileData?.full_name?.charAt(0) || user?.email?.charAt(0)}</AvatarFallback>
-                        )}
-                      </Avatar>
-                    </div>
-                    <input
-                      type="file"
-                      id="avatar"
-                      name="avatar"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    <label htmlFor="avatar" className="w-full block">
-                      <Button type="button" className="w-full bg-travel-blue hover:bg-travel-blue/90">
-                        {t('updatePhoto')}
-                      </Button>
-                    </label>
-                    {selectedFile && (
-                      <p className="text-xs text-center mt-2">{selectedFile.name}</p>
-                    )}
-                  </div>
-                  <div className="md:w-2/3 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm text-gray-500">{t('fullName')}</label>
-                        <input 
-                          name="full_name" 
-                          className="w-full p-2 border rounded" 
-                          defaultValue={profileData?.full_name || ""}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm text-gray-500">{t('email')}</label>
-                        <input 
-                          className="w-full p-2 border rounded bg-gray-100" 
-                          readOnly 
-                          value={user?.email || ""} 
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm text-gray-500">{t('location')}</label>
-                        <input 
-                          name="location" 
-                          className="w-full p-2 border rounded" 
-                          defaultValue={profileData?.location || ""}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm text-gray-500">{t('phone')}</label>
-                        <input 
-                          name="phone" 
-                          className="w-full p-2 border rounded" 
-                          defaultValue={profileData?.phone || ""}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm text-gray-500">{t('languages')}</label>
-                        <input 
-                          name="languages" 
-                          className="w-full p-2 border rounded" 
-                          defaultValue={profileData?.languages || ""}
-                          placeholder="English, Spanish, ..."
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm text-gray-500">{t('preferences')}</label>
-                        <input 
-                          name="preferences" 
-                          className="w-full p-2 border rounded" 
-                          defaultValue={profileData?.preferences ? JSON.stringify(profileData.preferences) : ""}
-                          placeholder='{"food": "vegetarian", "accommodation": "hotel"}'
-                        />
-                      </div>
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="bg-travel-green hover:bg-travel-green/90"
-                      disabled={isSaving}
-                    >
-                      {isSaving ? t('loading') : t('save')}
-                    </Button>
-                  </div>
-                </form>
+                {user && (
+                  <TravelerProfileForm 
+                    profileData={profileData}
+                    userId={user.id}
+                    onProfileUpdate={setProfileData}
+                    userEmail={user.email}
+                  />
+                )}
               </CardContent>
             </Card>
           </TabsContent>
