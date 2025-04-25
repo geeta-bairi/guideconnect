@@ -15,11 +15,12 @@ import { GuideBookings } from "@/components/dashboard/guide/GuideBookings";
 import { GuideStats } from "@/components/dashboard/guide/GuideStats";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import { GuideProfile } from "@/types/guide";
 
 const GuideDashboard = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const { user, loading } = useAuth();
-  const [profileData, setProfileData] = useState(null);
+  const [profileData, setProfileData] = useState<GuideProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -37,7 +38,7 @@ const GuideDashboard = () => {
           .maybeSingle();
         
         if (error) throw error;
-        setProfileData(data);
+        setProfileData(data as GuideProfile);
       } catch (error) {
         console.error('Error fetching profile:', error);
         toast({
@@ -67,7 +68,7 @@ const GuideDashboard = () => {
     }
   };
 
-  const handleProfileUpdate = (newProfileData) => {
+  const handleProfileUpdate = (newProfileData: GuideProfile) => {
     setProfileData(newProfileData);
   };
 

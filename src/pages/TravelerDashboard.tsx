@@ -46,7 +46,7 @@ const TravelerDashboard = () => {
           .maybeSingle();
         
         if (error) throw error;
-        setProfileData(data);
+        setProfileData(data as TravelerProfile);
       } catch (error) {
         console.error('Error fetching profile:', error);
         toast({
@@ -107,6 +107,7 @@ const TravelerDashboard = () => {
       phone: formData.get('phone') as string,
       languages: formData.get('languages') as string,
       preferences: preferences,
+      email: user.email,
       user_type: 'traveler'
     };
     

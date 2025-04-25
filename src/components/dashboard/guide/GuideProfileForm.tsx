@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
@@ -6,25 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GuideProfile } from "@/types/guide"; 
 
-export interface GuideProfile {
-  id: string;
-  full_name: string | null;
-  email: string | null;
-  location: string | null;
-  phone: string | null;
-  specialization: string | null;
-  bio: string | null;
-  languages: string | null;
-  hourly_rate: number | null;
-  avatar_url: string | null;
-  years_experience: number | null;
-  certifications: any | null;
-  availability: any | null;
-  user_type: string | null;
-}
-
-interface GuideProfileFormProps {
+export interface GuideProfileProps {
   profileData: GuideProfile | null;
   userId: string;
   userEmail?: string | null;
@@ -36,7 +19,7 @@ export const GuideProfileForm = ({
   userId, 
   userEmail,
   onProfileUpdate 
-}: GuideProfileFormProps) => {
+}: GuideProfileProps) => {
   const { toast } = useToast();
   const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -153,11 +136,11 @@ export const GuideProfileForm = ({
       
       if (data && data.length > 0) {
         onProfileUpdate({
-          ...data[0],
-          avatar_url: data[0].avatar_url || profileData?.avatar_url,
-          years_experience: data[0].years_experience || profileData?.years_experience,
-          certifications: data[0].certifications || profileData?.certifications,
-          availability: data[0].availability || profileData?.availability,
+          ...data[0] as GuideProfile,
+          avatar_url: data[0]?.avatar_url || profileData?.avatar_url,
+          years_experience: data[0]?.years_experience || profileData?.years_experience,
+          certifications: data[0]?.certifications || profileData?.certifications,
+          availability: data[0]?.availability || profileData?.availability,
           email: userEmail || profileData?.email
         });
       } else {
