@@ -1,35 +1,24 @@
 
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-interface TravelerProfile {
-  id: string;
-  full_name: string | null;
-  location: string | null;
-  bio: string | null;
-  phone: string | null;
-  languages: string | null;
-  avatar_url: string | null;
-  email: string | null;
-  user_type: string | null;
-}
+import type { TravelerProfile } from "@/types/profile";
 
 interface TravelerProfileFormProps {
-  profileData: TravelerProfile | null;
+  profileData: TravelerProfile;
   userId: string;
   userEmail?: string | null;
   onProfileUpdate: (data: TravelerProfile) => void;
 }
 
-export const TravelerProfileForm = ({ 
-  profileData, 
-  userId, 
+export const TravelerProfileForm = ({
+  profileData,
+  userId,
   userEmail,
-  onProfileUpdate 
+  onProfileUpdate
 }: TravelerProfileFormProps) => {
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -95,7 +84,11 @@ export const TravelerProfileForm = ({
       });
       
       if (data && data.length > 0) {
-        onProfileUpdate(data[0] as TravelerProfile);
+        onProfileUpdate({
+          ...data[0],
+          avatar_url: data[0]?.avatar_url || profileData?.avatar_url,
+          email: userEmail || profileData?.email
+        } as TravelerProfile);
       }
     } catch (error) {
       console.error('Error updating profile:', error);

@@ -9,6 +9,121 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          booking_date: string
+          created_at: string | null
+          description: string | null
+          end_time: string
+          guide_id: string
+          id: string
+          location: string
+          price: number
+          start_time: string
+          status: string
+          traveler_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          booking_date: string
+          created_at?: string | null
+          description?: string | null
+          end_time: string
+          guide_id: string
+          id?: string
+          location: string
+          price: number
+          start_time: string
+          status?: string
+          traveler_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          booking_date?: string
+          created_at?: string | null
+          description?: string | null
+          end_time?: string
+          guide_id?: string
+          id?: string
+          location?: string
+          price?: number
+          start_time?: string
+          status?: string
+          traveler_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_traveler_id_fkey"
+            columns: ["traveler_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          booking_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          read: boolean | null
+          receiver_id: string
+          sender_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          receiver_id: string
+          sender_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          receiver_id?: string
+          sender_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           bio: string | null
@@ -50,6 +165,41 @@ export type Database = {
           user_type?: string | null
         }
         Relationships: []
+      }
+      travelers: {
+        Row: {
+          created_at: string | null
+          favorite_destinations: string[] | null
+          id: string
+          preferences: Json | null
+          travel_history: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          favorite_destinations?: string[] | null
+          id: string
+          preferences?: Json | null
+          travel_history?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          favorite_destinations?: string[] | null
+          id?: string
+          preferences?: Json | null
+          travel_history?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travelers_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -1,20 +1,24 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MessageSquare, Search, Book, User } from "lucide-react";
+import { Calendar, MessageSquare, Search, User } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { TravelerProfileForm } from "@/components/dashboard/traveler/TravelerProfileForm";
+import { BookingsList } from "@/components/dashboard/traveler/BookingsList";
+import { MessagesList } from "@/components/dashboard/traveler/MessagesList";
+import type { TravelerProfile } from "@/types/profile";
 
 const TravelerDashboard = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const { user, loading } = useAuth();
-  const [profileData, setProfileData] = useState(null);
+  const [profileData, setProfileData] = useState<TravelerProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -25,14 +29,29 @@ const TravelerDashboard = () => {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .maybeSingle();
+          .single();
         
-        if (error) throw error;
-        setProfileData(data);
+        if (profileError) throw profileError;
+
+        const { data: travelerData, error: travelerError } = await supabase
+          .from('travelers')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (travelerError && travelerError.code !== 'PGRST116') {
+          throw travelerError;
+        }
+
+        setProfileData({
+          ...profileData,
+          ...travelerData,
+          email: user.email
+        });
       } catch (error) {
         console.error('Error fetching profile:', error);
         toast({
@@ -77,7 +96,9 @@ const TravelerDashboard = () => {
           <h1 className="text-xl font-bold">{t('appName')}</h1>
           <div className="flex items-center space-x-4">
             <LanguageSwitcher />
-            <Button variant="ghost" className="text-white hover:bg-travel-blue/80" onClick={handleLogout}>{t('logout')}</Button>
+            <Button variant="ghost" className="text-white hover:bg-travel-blue/80" onClick={handleLogout}>
+              {t('logout')}
+            </Button>
           </div>
         </div>
       </div>
@@ -86,14 +107,10 @@ const TravelerDashboard = () => {
         <h1 className="text-3xl font-bold mb-6 text-travel-blue">{t('dashboard')}</h1>
         
         <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-5 md:w-[600px]">
+          <TabsList className="grid grid-cols-4 md:w-[400px]">
             <TabsTrigger value="profile">
               <User className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">{t('profile')}</span>
-            </TabsTrigger>
-            <TabsTrigger value="itinerary">
-              <Book className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">{t('itinerary')}</span>
             </TabsTrigger>
             <TabsTrigger value="search">
               <Search className="h-4 w-4 mr-2" />
@@ -111,11 +128,8 @@ const TravelerDashboard = () => {
           
           <TabsContent value="profile" className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle>{t('myProfile')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {user && (
+              <CardContent className="pt-6">
+                {user && profileData && (
                   <TravelerProfileForm 
                     profileData={profileData}
                     userId={user.id}
@@ -127,43 +141,8 @@ const TravelerDashboard = () => {
             </Card>
           </TabsContent>
           
-          <TabsContent value="itinerary">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('aiItineraryPlanner')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-gray-100 p-4 rounded-lg mb-4">
-                  <h3 className="font-medium mb-2">{t('planYourTrip')}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <input className="p-2 border rounded" placeholder={t('destination')} />
-                    <input className="p-2 border rounded" placeholder={t('startDate')} type="date" />
-                    <input className="p-2 border rounded" placeholder={t('endDate')} type="date" />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block mb-1">{t('interests')}</label>
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm">History</Button>
-                      <Button variant="outline" size="sm">Food</Button>
-                      <Button variant="outline" size="sm">Adventure</Button>
-                      <Button variant="outline" size="sm">Nature</Button>
-                      <Button variant="outline" size="sm">Culture</Button>
-                    </div>
-                  </div>
-                  <Button className="bg-travel-green hover:bg-travel-green/90">{t('generateItinerary')}</Button>
-                </div>
-                <div className="text-center p-8">
-                  <p className="text-gray-500">{t('noItinerariesYet')}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
           <TabsContent value="search">
             <Card>
-              <CardHeader>
-                <CardTitle>{t('findLocalGuides')}</CardTitle>
-              </CardHeader>
               <CardContent>
                 <div className="mb-6">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -190,29 +169,11 @@ const TravelerDashboard = () => {
           </TabsContent>
           
           <TabsContent value="bookings">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('yourBookings')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center p-8">
-                  <p className="text-gray-500">{t('noBookingsYet')}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <BookingsList />
           </TabsContent>
           
           <TabsContent value="messages">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('messages')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center p-8">
-                  <p className="text-gray-500">{t('noMessagesYet')}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <MessagesList />
           </TabsContent>
         </Tabs>
       </div>
